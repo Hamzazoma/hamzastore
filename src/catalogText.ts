@@ -35,111 +35,6 @@ const categoryText: Record<
   },
 }
 
-const productText: Record<
-  string,
-  {
-    ar: { name: string; description: string; badge?: string }
-    en: { name: string; description: string; badge?: string }
-  }
-> = {
-  'wc-arg-home': {
-    ar: {
-      name: 'طقم الأرجنتين الأساسي',
-      description: 'قماش خفيف مناسب للمباريات والتشجيع، مع تفاصيل مستوحاة من النسخة الرسمية.',
-      badge: 'الأكثر طلبًا',
-    },
-    en: {
-      name: 'Argentina home kit',
-      description: 'Lightweight fabric for match days and fanwear with details inspired by the official version.',
-      badge: 'Best seller',
-    },
-  },
-  'wc-brazil-away': {
-    ar: {
-      name: 'تيشيرت البرازيل الاحتياطي',
-      description: 'تصميم ملفت بدرجات الأزرق، مناسب للمشجعين ومحبي الستايل الرياضي.',
-      badge: 'كأس العالم',
-    },
-    en: {
-      name: 'Brazil away shirt',
-      description: 'Bold blue shades for fans who love sporty street style.',
-      badge: 'World Cup',
-    },
-  },
-  'men-urban-set': {
-    ar: {
-      name: 'طقم رجالي كاجوال',
-      description: 'قصة مريحة وخامة ناعمة مناسبة للخروج اليومي.',
-      badge: 'رجالي',
-    },
-    en: {
-      name: 'Men casual set',
-      description: 'Relaxed fit with a soft feel for daily outings.',
-      badge: 'Men',
-    },
-  },
-  'women-elegant-dress': {
-    ar: {
-      name: 'فستان سيدات أنيق',
-      description: 'فستان ناعم بمظهر راقٍ مناسب للمشاوير والمناسبات الخفيفة.',
-      badge: 'وصل جديد',
-    },
-    en: {
-      name: 'Elegant women dress',
-      description: 'Soft and refined dress for outings and light occasions.',
-      badge: 'New in',
-    },
-  },
-  'girls-bloom-set': {
-    ar: {
-      name: 'طقم بنات مزهر',
-      description: 'ألوان مبهجة وقماش مناسب للحركة واللعب.',
-      badge: 'بنات',
-    },
-    en: {
-      name: 'Floral girls set',
-      description: 'Cheerful colors and easy fabric for movement and play.',
-      badge: 'Girls',
-    },
-  },
-  'kids-soft-pack': {
-    ar: {
-      name: 'باك أطفال صيفي',
-      description: 'قطعتان بخامة قطنية مريحة للأيام الطويلة.',
-      badge: 'أطفال',
-    },
-    en: {
-      name: 'Kids summer pack',
-      description: 'Two-piece cotton set made for long comfortable days.',
-      badge: 'Kids',
-    },
-  },
-  'shoes-white-run': {
-    ar: {
-      name: 'كوتشي أبيض كلاسيك',
-      description: 'حذاء عملي يناسب اللبس اليومي واللوك الرياضي.',
-      badge: 'جزم',
-    },
-    en: {
-      name: 'Classic white sneakers',
-      description: 'Easy everyday pair that works with casual and sporty outfits.',
-      badge: 'Shoes',
-    },
-  },
-  'women-casual-set': {
-    ar: {
-      name: 'طقم سيدات مريح',
-      description: 'ستايل بسيط وأنيق، مناسب للشغل والخروجات السريعة.',
-      badge: 'سيدات',
-    },
-    en: {
-      name: 'Comfort women set',
-      description: 'Simple, polished style for work and quick outings.',
-      badge: 'Women',
-    },
-  },
-}
-
 export function localizeCategory(category: Category, lang: Lang): Category {
   const text = categoryText[category.id]?.[lang]
 
@@ -155,16 +50,17 @@ export function localizeCategory(category: Category, lang: Lang): Category {
 }
 
 export function localizeProduct(product: Product, lang: Lang): Product {
-  const text = productText[product.id]?.[lang]
-
-  if (!text) {
-    return product
-  }
+  const isArabic = lang === 'ar'
+  const name = isArabic ? product.nameAr ?? product.name : product.nameEn ?? product.name
+  const description = isArabic
+    ? product.descriptionAr ?? product.description
+    : product.descriptionEn ?? product.description
+  const badge = isArabic ? product.badgeAr ?? product.badge : product.badgeEn ?? product.badge
 
   return {
     ...product,
-    name: text.name,
-    description: text.description,
-    badge: text.badge ?? product.badge,
+    name,
+    description,
+    badge,
   }
 }

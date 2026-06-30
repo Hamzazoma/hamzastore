@@ -84,6 +84,25 @@ export default async function handler(request) {
       return json({ product }, 201)
     }
 
+    if (request.method === 'PATCH' && entity === 'products' && id) {
+      const payload = await request.json()
+      const currentProduct = await store.get(`product:${id}`, { type: 'json' })
+
+      if (!currentProduct) {
+        return json({ message: 'المنتج غير موجود.' }, 404)
+      }
+
+      const updatedProduct = {
+        ...currentProduct,
+        ...payload,
+        id,
+      }
+
+      await store.setJSON(`product:${id}`, updatedProduct)
+      await store.setJSON(PRODUCTS_SEEDED_KEY, true)
+      return json({ product: updatedProduct })
+    }
+
     if (request.method === 'DELETE' && entity === 'products' && id) {
       const currentProduct = await store.get(`product:${id}`, { type: 'json' })
 

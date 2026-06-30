@@ -1,6 +1,6 @@
 :root {
   color: #111827;
-  background: #f5f5f5;
+  background: #f5f7fb;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.5;
   font-synthesis: none;
@@ -16,9 +16,9 @@
 body {
   margin: 0;
   background:
-    radial-gradient(circle at top right, rgba(255, 111, 145, 0.08), transparent 24%),
-    radial-gradient(circle at top left, rgba(21, 128, 61, 0.08), transparent 28%),
-    #f5f5f5;
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.1), transparent 24%),
+    radial-gradient(circle at top left, rgba(168, 85, 247, 0.12), transparent 22%),
+    #f5f7fb;
   color: #111827;
 }
 
@@ -63,7 +63,7 @@ button {
 .back-link,
 .tool-btn {
   border: 1px solid #d1d5db;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .topbar-actions {
@@ -83,13 +83,23 @@ button {
 .product-info,
 .suggestion-card,
 .product-empty__card {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.88);
   border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
   box-shadow: 0 16px 45px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(14px);
 }
 
 .product-media {
   min-height: 620px;
+  overflow: hidden;
+}
+
+.product-media img,
+.product-media__gradient {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .product-info {
@@ -111,9 +121,24 @@ button {
   margin: 16px 0 0;
 }
 
-.product-price {
+.product-meta {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.product-meta small {
   display: block;
-  margin-top: 16px;
+  color: #6b7280;
+}
+
+.product-meta strong {
+  display: block;
+  margin-top: 6px;
+}
+
+.product-price {
   font-size: 34px;
 }
 
@@ -174,6 +199,21 @@ button {
   font-weight: 700;
 }
 
+.product-benefits {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.product-benefits article {
+  padding: 14px;
+  border-radius: 18px;
+  background: #f8fafc;
+  color: #4b5563;
+  font-size: 14px;
+}
+
 .suggestions {
   margin-top: 28px;
 }
@@ -201,6 +241,7 @@ button {
 
 .suggestion-card__image {
   height: 220px;
+  overflow: hidden;
 }
 
 .suggestion-card__body {
@@ -209,6 +250,13 @@ button {
   display: grid;
   gap: 8px;
   padding: 16px;
+}
+
+.suggestion-card__image img,
+.suggestion-card__gradient {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .product-empty {
@@ -221,6 +269,48 @@ button {
   text-align: center;
 }
 
+.loading-copy {
+  text-align: center;
+  color: #6b7280;
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #e5e7eb;
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: shimmer 1.35s infinite;
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+
+.skeleton-line--short {
+  width: 46%;
+}
+
+.skeleton-pill {
+  width: 70px;
+  height: 34px;
+  border-radius: 999px;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 html[dir='ltr'] .product-topbar,
 html[dir='ltr'] .topbar-actions {
   flex-direction: row;
@@ -228,8 +318,8 @@ html[dir='ltr'] .topbar-actions {
 
 html[data-theme='dark'] body {
   background:
-    radial-gradient(circle at top right, rgba(148, 163, 184, 0.08), transparent 24%),
-    radial-gradient(circle at top left, rgba(51, 65, 85, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 24%),
+    radial-gradient(circle at top left, rgba(14, 165, 233, 0.08), transparent 20%),
     #05070c;
   color: #e5e7eb;
 }
@@ -238,7 +328,8 @@ html[data-theme='dark'] .product-media,
 html[data-theme='dark'] .product-info,
 html[data-theme='dark'] .suggestion-card,
 html[data-theme='dark'] .product-empty__card {
-  background: #0b1220;
+  background: rgba(11, 18, 32, 0.92);
+  border-color: rgba(148, 163, 184, 0.12);
   box-shadow: 0 16px 45px rgba(0, 0, 0, 0.4);
 }
 
@@ -254,17 +345,29 @@ html[data-theme='dark'] .product-block p {
   color: rgba(229, 231, 235, 0.74);
 }
 
-html[data-theme='dark'] .sizes-row span {
+html[data-theme='dark'] .sizes-row span,
+html[data-theme='dark'] .product-benefits article {
   background: rgba(148, 163, 184, 0.12);
+  color: rgba(229, 231, 235, 0.78);
 }
 
 html[data-theme='dark'] .notice {
   color: #4ade80;
 }
 
+html[data-theme='dark'] .product-meta small,
+html[data-theme='dark'] .loading-copy {
+  color: rgba(229, 231, 235, 0.72);
+}
+
+html[data-theme='dark'] .skeleton {
+  background: rgba(148, 163, 184, 0.18);
+}
+
 @media (max-width: 980px) {
   .product-layout,
-  .suggestions-grid {
+  .suggestions-grid,
+  .product-benefits {
     grid-template-columns: 1fr;
   }
 
@@ -283,7 +386,9 @@ html[data-theme='dark'] .notice {
     align-items: stretch;
   }
 
-  .topbar-actions {
+  .topbar-actions,
+  .product-meta {
+    grid-template-columns: 1fr;
     justify-content: stretch;
   }
 }

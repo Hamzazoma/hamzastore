@@ -5,6 +5,7 @@ import {
   getCategories,
   getOrders,
   getProducts,
+  updateProduct,
   updateOrderStatus,
 } from './api.ts'
 import { localizeCategory, localizeProduct, type Lang } from './catalogText.ts'
@@ -18,7 +19,8 @@ if (!app) {
 
 const appRoot = app
 const categories = getCategories()
-const orderStatuses: OrderStatus[] = ['جديد', 'قيد التجهيز', 'تم الشحن', 'تم التسليم']
+const orderStatuses: OrderStatus[] = ['new', 'preparing', 'shipped', 'delivered']
+const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
 const AUTO_REFRESH_INTERVAL_MS = 10000
 const FORM_IDLE_RESUME_MS = 1800
 const FALLBACK_PRODUCT_IMAGE =
@@ -29,152 +31,150 @@ type Theme = 'light' | 'dark'
 const LANG_KEY = 'storefront-lang'
 const THEME_KEY = 'storefront-theme'
 
-function readStoredLang(): Lang {
-  const stored = localStorage.getItem(LANG_KEY)
-  return stored === 'en' ? 'en' : 'ar'
-}
-
-function readStoredTheme(): Theme {
-  const stored = localStorage.getItem(THEME_KEY)
-  return stored === 'dark' ? 'dark' : 'light'
-}
-
-function applyLanguage(lang: Lang) {
-  document.documentElement.lang = lang
-  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'
-}
-
-function applyTheme(theme: Theme) {
-  document.documentElement.dataset.theme = theme
-}
-
 const messages: Record<Lang, Record<string, string>> = {
   ar: {
     admin: 'لوحة الإدارة',
-    title: 'متابعة الطلبات والمنتجات',
+    title: 'إدارة الطلبات والمنتجات',
     intro:
-      'التحديث التلقائي يعمل كل 10 ثوانٍ، ويتوقف مؤقتًا أثناء الكتابة داخل نموذج إضافة المنتج حتى لا تفقد أي بيانات.',
+      'يتم تحديث الطلبات كل 10 ثوانٍ، ويتوقف التحديث تلقائيًا أثناء الكتابة داخل النموذج حتى لا تتأثر البيانات.',
     back: 'الرجوع للمتجر',
     refreshNow: 'تحديث الآن',
     orders: 'الطلبات',
     latestOrders: 'آخر الطلبات',
-    addProduct: 'إضافة منتج',
-    newProduct: 'منتج جديد',
-    name: 'اسم المنتج',
+    addProduct: 'إدارة المنتج',
+    newProduct: 'إضافة أو تعديل منتج',
+    nameAr: 'اسم المنتج بالعربية',
+    nameEn: 'اسم المنتج بالإنجليزية',
     price: 'السعر',
     category: 'القسم',
-    description: 'الوصف',
+    descriptionAr: 'الوصف بالعربية',
+    descriptionEn: 'الوصف بالإنجليزية',
     sizes: 'المقاسات',
-    sizesHint: 'اختر مقاسًا واحدًا على الأقل.',
+    sizesHint: 'المقاسات المدعومة: XS, S, M, L, XL, XXL',
     image: 'الصورة',
-    chooseImage: 'اختيار صورة',
+    chooseImage: 'رفع صورة',
+    imageHint: 'يفضل صورة مربعة أو أفقية بجودة واضحة.',
     noFile: 'لم يتم اختيار ملف',
-    badge: 'نص الشارة',
+    badgeAr: 'شارة بالعربية',
+    badgeEn: 'شارة بالإنجليزية',
     add: 'إضافة المنتج',
-    products: 'المنتجات الحالية',
+    save: 'حفظ التعديل',
+    cancelEdit: 'إلغاء التعديل',
+    products: 'المنتجات',
     allProducts: 'كل المنتجات',
     status: 'حالة الطلب',
     noNotes: 'لا توجد ملاحظات',
     noOrders: 'لا توجد طلبات حتى الآن.',
-    noProducts: 'لا توجد منتجات حاليًا.',
-    messageAdded: 'تمت إضافة المنتج بنجاح وسيظهر في المتجر مباشرة.',
+    noProducts: 'لا توجد منتجات حتى الآن.',
+    messageAdded: 'تمت إضافة المنتج بنجاح.',
+    messageUpdated: 'تم تحديث المنتج بنجاح.',
     messageDeleted: 'تم حذف المنتج:',
     confirmDelete: 'هل تريد حذف المنتج',
     confirmDeleteTail: '؟ لا يمكن التراجع عن هذا الإجراء.',
     delete: 'حذف',
+    edit: 'تعديل',
     updating: 'جارٍ التحديث...',
     autoEvery: 'تحديث تلقائي كل 10 ثوانٍ',
     paused: 'التحديث متوقف مؤقتًا أثناء الكتابة.',
     saving: 'جارٍ حفظ المنتج...',
-    toggleLang: 'English',
-    toggleThemeLight: 'لايت',
-    toggleThemeDark: 'دارك',
+    toggleLang: 'AR | EN',
+    toggleTheme: 'داكن | فاتح',
     totalOrders: 'إجمالي الطلبات',
-    pendingOrders: 'طلبات قيد المتابعة',
+    pendingOrders: 'طلبات نشطة',
     totalSales: 'إجمالي المبيعات',
-    sizesRequired: 'من فضلك اختر مقاسًا واحدًا على الأقل قبل إضافة المنتج.',
-    defaultBadge: 'جديد',
-    orderUpdated: 'تم تحديث الطلب إلى حالة:',
-    namePlaceholder: 'مثال: طقم فرنسا الأساسي',
+    sizesRequired: 'اختر مقاسًا واحدًا على الأقل.',
+    defaultBadgeAr: 'جديد',
+    defaultBadgeEn: 'New',
+    orderUpdated: 'تم تحديث الطلب إلى:',
+    nameArPlaceholder: 'مثال: طقم فرنسا الأساسي',
+    nameEnPlaceholder: 'Example: France home kit',
     pricePlaceholder: '999',
-    descPlaceholder: 'وصف مختصر للمنتج',
-    badgePlaceholder: 'مثال: جديد',
+    descArPlaceholder: 'وصف واضح وقصير بالعربية',
+    descEnPlaceholder: 'Clear short description in English',
+    badgeArPlaceholder: 'مثال: جديد',
+    badgeEnPlaceholder: 'Example: New',
+    uploadTitle: 'واجهة رفع جميلة مع معاينة مباشرة',
+    uploadEmpty: 'لا توجد معاينة بعد',
+    previewAlt: 'معاينة صورة المنتج',
+    modeCreate: 'وضع الإضافة',
+    modeEdit: 'وضع التعديل',
+    statusNew: 'جديد',
+    statusPreparing: 'قيد التجهيز',
+    statusShipped: 'تم الشحن',
+    statusDelivered: 'تم التسليم',
   },
   en: {
     admin: 'Admin panel',
-    title: 'Orders & Products',
+    title: 'Manage orders and products',
     intro:
-      'Auto refresh runs every 10 seconds and pauses while you type in the add-product form to avoid losing data.',
+      'Orders refresh every 10 seconds, and refreshing pauses automatically while typing in the form so your data stays intact.',
     back: 'Back to store',
-    refreshNow: 'Refresh',
+    refreshNow: 'Refresh now',
     orders: 'Orders',
     latestOrders: 'Latest orders',
-    addProduct: 'Add product',
-    newProduct: 'New product',
-    name: 'Product name',
+    addProduct: 'Product management',
+    newProduct: 'Add or edit product',
+    nameAr: 'Arabic product name',
+    nameEn: 'English product name',
     price: 'Price',
     category: 'Category',
-    description: 'Description',
+    descriptionAr: 'Arabic description',
+    descriptionEn: 'English description',
     sizes: 'Sizes',
-    sizesHint: 'Select at least one size.',
+    sizesHint: 'Supported sizes: XS, S, M, L, XL, XXL',
     image: 'Image',
-    chooseImage: 'Choose image',
-    noFile: 'No file chosen',
-    badge: 'Badge text',
+    chooseImage: 'Upload image',
+    imageHint: 'A square or landscape image with clear quality is recommended.',
+    noFile: 'No file selected',
+    badgeAr: 'Arabic badge',
+    badgeEn: 'English badge',
     add: 'Add product',
+    save: 'Save changes',
+    cancelEdit: 'Cancel editing',
     products: 'Products',
     allProducts: 'All products',
     status: 'Order status',
     noNotes: 'No notes',
     noOrders: 'No orders yet.',
     noProducts: 'No products yet.',
-    messageAdded: 'Product added successfully and will appear in the store.',
+    messageAdded: 'Product added successfully.',
+    messageUpdated: 'Product updated successfully.',
     messageDeleted: 'Deleted product:',
     confirmDelete: 'Delete product',
-    confirmDeleteTail: '? This cannot be undone.',
+    confirmDeleteTail: '? This action cannot be undone.',
     delete: 'Delete',
+    edit: 'Edit',
     updating: 'Updating...',
     autoEvery: 'Auto refresh every 10 seconds',
-    paused: 'Auto refresh paused while typing.',
+    paused: 'Refresh paused while typing.',
     saving: 'Saving product...',
-    toggleLang: 'العربية',
-    toggleThemeLight: 'Light',
-    toggleThemeDark: 'Dark',
+    toggleLang: 'AR | EN',
+    toggleTheme: 'Dark / Light',
     totalOrders: 'Total orders',
-    pendingOrders: 'Pending orders',
+    pendingOrders: 'Active orders',
     totalSales: 'Total sales',
-    sizesRequired: 'Please select at least one size before adding the product.',
-    defaultBadge: 'New',
+    sizesRequired: 'Select at least one size.',
+    defaultBadgeAr: 'جديد',
+    defaultBadgeEn: 'New',
     orderUpdated: 'Order updated to:',
-    namePlaceholder: 'e.g. France kit',
+    nameArPlaceholder: 'Example: طقم فرنسا الأساسي',
+    nameEnPlaceholder: 'Example: France home kit',
     pricePlaceholder: '999',
-    descPlaceholder: 'Short product description',
-    badgePlaceholder: 'e.g. New',
+    descArPlaceholder: 'Clear short description in Arabic',
+    descEnPlaceholder: 'Clear short description in English',
+    badgeArPlaceholder: 'Example: جديد',
+    badgeEnPlaceholder: 'Example: New',
+    uploadTitle: 'Beautiful upload area with instant preview',
+    uploadEmpty: 'No preview yet',
+    previewAlt: 'Product image preview',
+    modeCreate: 'Create mode',
+    modeEdit: 'Edit mode',
+    statusNew: 'New',
+    statusPreparing: 'Preparing',
+    statusShipped: 'Shipped',
+    statusDelivered: 'Delivered',
   },
 }
-
-function t(key: keyof (typeof messages)['ar']) {
-  return messages[state.ui.lang][key] ?? messages.ar[key] ?? String(key)
-}
-
-const sizeOptions = [
-  'XS',
-  'S',
-  'M',
-  'L',
-  'XL',
-  'XXL',
-  '36',
-  '37',
-  '38',
-  '39',
-  '40',
-  '41',
-  '42',
-  '43',
-  '44',
-  '45',
-]
 
 const state: {
   orders: Order[]
@@ -182,6 +182,9 @@ const state: {
   message: string
   loading: boolean
   submittingProduct: boolean
+  formMode: 'create' | 'edit'
+  editingProductId: string | null
+  imagePreview: string
   ui: {
     lang: Lang
     theme: Theme
@@ -192,6 +195,9 @@ const state: {
   message: '',
   loading: true,
   submittingProduct: false,
+  formMode: 'create',
+  editingProductId: null,
+  imagePreview: '',
   ui: {
     lang: readStoredLang(),
     theme: readStoredTheme(),
@@ -215,6 +221,42 @@ let toggleThemeButton: HTMLButtonElement | null = null
 let imageInput: HTMLInputElement | null = null
 let imageFileButton: HTMLButtonElement | null = null
 let imageFileName: HTMLSpanElement | null = null
+let imagePreviewBox: HTMLDivElement | null = null
+let cancelEditButton: HTMLButtonElement | null = null
+let submitButton: HTMLButtonElement | null = null
+let formModeBadge: HTMLSpanElement | null = null
+
+function readStoredLang(): Lang {
+  const stored = localStorage.getItem(LANG_KEY)
+  return stored === 'en' ? 'en' : 'ar'
+}
+
+function readStoredTheme(): Theme {
+  const stored = localStorage.getItem(THEME_KEY)
+  return stored === 'dark' ? 'dark' : 'light'
+}
+
+function applyLanguage(lang: Lang) {
+  document.documentElement.lang = lang
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'
+}
+
+function applyTheme(theme: Theme) {
+  document.documentElement.dataset.theme = theme
+}
+
+function t(key: keyof (typeof messages)['ar']) {
+  return messages[state.ui.lang][key] ?? messages.ar[key] ?? String(key)
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+}
 
 function formatPrice(value: number) {
   return new Intl.NumberFormat(state.ui.lang === 'ar' ? 'ar-SA' : 'en-SA', {
@@ -229,6 +271,17 @@ function formatDate(value: string) {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value))
+}
+
+function getOrderStatusLabel(status: OrderStatus) {
+  const keyMap: Record<OrderStatus, keyof (typeof messages)['ar']> = {
+    new: 'statusNew',
+    preparing: 'statusPreparing',
+    shipped: 'statusShipped',
+    delivered: 'statusDelivered',
+  }
+
+  return t(keyMap[status])
 }
 
 function isRefreshPaused() {
@@ -254,10 +307,7 @@ function scheduleRefreshResume() {
 }
 
 function markFormInteraction(duration = FORM_IDLE_RESUME_MS) {
-  if (!productForm) {
-    return
-  }
-
+  if (!productForm) return
   formRefreshState.pausedUntil = Date.now() + duration
   renderRefreshStatus()
   scheduleRefreshResume()
@@ -269,10 +319,114 @@ function resetFormPause() {
   renderRefreshStatus()
 }
 
+function getLocalizedCategories() {
+  return categories.map((category) => localizeCategory(category, state.ui.lang))
+}
+
+function getProductImageStyle(image: string) {
+  if (image.startsWith('linear-gradient') || image.startsWith('radial-gradient')) {
+    return `background:${image};`
+  }
+
+  return `background-image:url("${image}");background-size:cover;background-position:center;background-repeat:no-repeat;background-color:#e5e7eb;`
+}
+
+function renderImagePreview() {
+  if (!imagePreviewBox) return
+
+  if (!state.imagePreview) {
+    imagePreviewBox.innerHTML = `
+      <div class="upload-preview__empty">
+        <strong>${t('uploadTitle')}</strong>
+        <span>${t('uploadEmpty')}</span>
+      </div>
+    `
+    return
+  }
+
+  if (state.imagePreview.startsWith('data:image/')) {
+    imagePreviewBox.innerHTML = `<img src="${state.imagePreview}" alt="${t('previewAlt')}" />`
+    return
+  }
+
+  imagePreviewBox.innerHTML = `<div class="upload-preview__gradient" style="${getProductImageStyle(state.imagePreview)}" aria-label="${t('previewAlt')}"></div>`
+}
+
+function getSelectedSizes() {
+  return Array.from(productForm?.querySelectorAll<HTMLInputElement>('input[name="sizes"]:checked') ?? []).map(
+    (input) => input.value,
+  )
+}
+
+function setSelectedSizes(sizes: string[]) {
+  productForm?.querySelectorAll<HTMLInputElement>('input[name="sizes"]').forEach((input) => {
+    input.checked = sizes.includes(input.value)
+  })
+}
+
+function resetProductForm() {
+  productForm?.reset()
+  setSelectedSizes([])
+  state.formMode = 'create'
+  state.editingProductId = null
+  state.imagePreview = ''
+  if (imageFileName) {
+    imageFileName.textContent = t('noFile')
+  }
+  if (imageInput) {
+    imageInput.value = ''
+  }
+  renderImagePreview()
+  renderFormMode()
+}
+
+function renderFormMode() {
+  if (formModeBadge) {
+    formModeBadge.textContent = state.formMode === 'edit' ? t('modeEdit') : t('modeCreate')
+  }
+  if (submitButton) {
+    submitButton.textContent = state.formMode === 'edit' ? t('save') : t('add')
+  }
+  if (cancelEditButton) {
+    cancelEditButton.hidden = state.formMode !== 'edit'
+  }
+}
+
+function loadProductIntoForm(product: Product) {
+  if (!productForm) return
+
+  state.formMode = 'edit'
+  state.editingProductId = product.id
+
+  const localized = localizeProduct(product, state.ui.lang)
+
+  ;(productForm.elements.namedItem('nameAr') as HTMLInputElement | null)!.value = product.nameAr ?? ''
+  ;(productForm.elements.namedItem('nameEn') as HTMLInputElement | null)!.value = product.nameEn ?? ''
+  ;(productForm.elements.namedItem('price') as HTMLInputElement | null)!.value = String(product.price)
+  ;(productForm.elements.namedItem('category') as HTMLSelectElement | null)!.value = product.category
+  ;(productForm.elements.namedItem('descriptionAr') as HTMLTextAreaElement | null)!.value =
+    product.descriptionAr ?? ''
+  ;(productForm.elements.namedItem('descriptionEn') as HTMLTextAreaElement | null)!.value =
+    product.descriptionEn ?? ''
+  ;(productForm.elements.namedItem('badgeAr') as HTMLInputElement | null)!.value = product.badgeAr ?? ''
+  ;(productForm.elements.namedItem('badgeEn') as HTMLInputElement | null)!.value = product.badgeEn ?? ''
+  setSelectedSizes(product.sizes)
+
+  state.imagePreview = product.image
+  if (imageFileName) {
+    imageFileName.textContent = localized.name
+  }
+  renderImagePreview()
+  renderFormMode()
+  state.message = ''
+  renderMessage()
+  productForm.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
 function renderShell() {
   applyLanguage(state.ui.lang)
   applyTheme(state.ui.theme)
-  const localizedCategories = categories.map((category) => localizeCategory(category, state.ui.lang))
+  const localizedCategories = getLocalizedCategories()
 
   appRoot.innerHTML = `
     <div class="admin-shell">
@@ -286,9 +440,7 @@ function renderShell() {
           <a href="index.html">${t('back')}</a>
           <button id="manual-refresh" type="button">${t('refreshNow')}</button>
           <button id="toggle-lang" class="tool-btn" type="button">${t('toggleLang')}</button>
-          <button id="toggle-theme" class="tool-btn" type="button">
-            ${state.ui.theme === 'dark' ? t('toggleThemeLight') : t('toggleThemeDark')}
-          </button>
+          <button id="toggle-theme" class="tool-btn" type="button">${t('toggleTheme')}</button>
         </div>
       </header>
 
@@ -303,7 +455,6 @@ function renderShell() {
             </div>
             <small id="refresh-status"></small>
           </div>
-
           <div id="orders-list" class="orders-list"></div>
         </section>
 
@@ -314,29 +465,46 @@ function renderShell() {
                 <span class="eyebrow">${t('addProduct')}</span>
                 <h2>${t('newProduct')}</h2>
               </div>
+              <span id="form-mode" class="mode-badge">${t('modeCreate')}</span>
             </div>
 
             <form id="product-form" class="product-form">
-              <label>
-                <span>${t('name')}</span>
-                <input name="name" placeholder="${t('namePlaceholder')}" required />
-              </label>
-              <label>
-                <span>${t('price')}</span>
-                <input name="price" type="number" min="1" placeholder="${t('pricePlaceholder')}" required />
-              </label>
-              <label>
-                <span>${t('category')}</span>
-                <select name="category" required>
-                  ${localizedCategories
-                    .map((category) => `<option value="${category.id}">${category.name}</option>`)
-                    .join('')}
-                </select>
-              </label>
-              <label>
-                <span>${t('description')}</span>
-                <textarea name="description" placeholder="${t('descPlaceholder')}" required></textarea>
-              </label>
+              <div class="two-columns">
+                <label>
+                  <span>${t('nameAr')}</span>
+                  <input name="nameAr" placeholder="${t('nameArPlaceholder')}" required />
+                </label>
+                <label>
+                  <span>${t('nameEn')}</span>
+                  <input name="nameEn" placeholder="${t('nameEnPlaceholder')}" required />
+                </label>
+              </div>
+
+              <div class="two-columns">
+                <label>
+                  <span>${t('price')}</span>
+                  <input name="price" type="number" min="1" placeholder="${t('pricePlaceholder')}" required />
+                </label>
+                <label>
+                  <span>${t('category')}</span>
+                  <select name="category" required>
+                    ${localizedCategories
+                      .map((category) => `<option value="${category.id}">${category.name}</option>`)
+                      .join('')}
+                  </select>
+                </label>
+              </div>
+
+              <div class="two-columns">
+                <label>
+                  <span>${t('descriptionAr')}</span>
+                  <textarea name="descriptionAr" placeholder="${t('descArPlaceholder')}" required></textarea>
+                </label>
+                <label>
+                  <span>${t('descriptionEn')}</span>
+                  <textarea name="descriptionEn" placeholder="${t('descEnPlaceholder')}" required></textarea>
+                </label>
+              </div>
 
               <div class="sizes-picker">
                 <span class="field-label">${t('sizes')}</span>
@@ -355,19 +523,34 @@ function renderShell() {
                 <small class="field-hint">${t('sizesHint')}</small>
               </div>
 
-              <label>
-                <span>${t('image')}</span>
-                <input id="imageFile" name="imageFile" type="file" accept="image/*" class="visually-hidden" />
-                <div class="file-picker">
+              <div class="upload-card">
+                <div class="upload-card__top">
+                  <div>
+                    <span>${t('image')}</span>
+                    <small>${t('imageHint')}</small>
+                  </div>
                   <button id="file-button" class="tool-btn" type="button">${t('chooseImage')}</button>
-                  <span id="file-name" class="file-name">${t('noFile')}</span>
                 </div>
-              </label>
-              <label>
-                <span>${t('badge')}</span>
-                <input name="badge" placeholder="${t('badgePlaceholder')}" />
-              </label>
-              <button type="submit">${t('add')}</button>
+                <input id="imageFile" name="imageFile" type="file" accept="image/*" class="visually-hidden" />
+                <div id="image-preview" class="upload-preview"></div>
+                <span id="file-name" class="file-name">${t('noFile')}</span>
+              </div>
+
+              <div class="two-columns">
+                <label>
+                  <span>${t('badgeAr')}</span>
+                  <input name="badgeAr" placeholder="${t('badgeArPlaceholder')}" />
+                </label>
+                <label>
+                  <span>${t('badgeEn')}</span>
+                  <input name="badgeEn" placeholder="${t('badgeEnPlaceholder')}" />
+                </label>
+              </div>
+
+              <div class="form-actions">
+                <button id="submit-product" type="submit">${t('add')}</button>
+                <button id="cancel-edit" class="tool-btn" type="button" hidden>${t('cancelEdit')}</button>
+              </div>
             </form>
             <p id="admin-message" class="admin-message" hidden></p>
           </section>
@@ -398,9 +581,15 @@ function renderShell() {
   imageInput = document.querySelector<HTMLInputElement>('#imageFile')
   imageFileButton = document.querySelector<HTMLButtonElement>('#file-button')
   imageFileName = document.querySelector<HTMLSpanElement>('#file-name')
+  imagePreviewBox = document.querySelector<HTMLDivElement>('#image-preview')
+  cancelEditButton = document.querySelector<HTMLButtonElement>('#cancel-edit')
+  submitButton = document.querySelector<HTMLButtonElement>('#submit-product')
+  formModeBadge = document.querySelector<HTMLSpanElement>('#form-mode')
 
   bindEvents()
   renderAll()
+  renderImagePreview()
+  renderFormMode()
 }
 
 function bindEvents() {
@@ -419,40 +608,40 @@ function bindEvents() {
   toggleThemeButton?.addEventListener('click', () => {
     state.ui.theme = state.ui.theme === 'dark' ? 'light' : 'dark'
     localStorage.setItem(THEME_KEY, state.ui.theme)
-    applyTheme(state.ui.theme)
-    if (toggleThemeButton) {
-      toggleThemeButton.textContent =
-        state.ui.theme === 'dark' ? t('toggleThemeLight') : t('toggleThemeDark')
-    }
+    renderShell()
   })
 
   imageFileButton?.addEventListener('click', () => {
     imageInput?.click()
   })
 
-  imageInput?.addEventListener('change', () => {
-    if (!imageFileName || !imageInput) return
+  imageInput?.addEventListener('change', async () => {
+    if (!imageInput || !imageFileName) return
     const file = imageInput.files?.[0]
     imageFileName.textContent = file?.name || t('noFile')
+    if (file && file.size) {
+      state.imagePreview = await readFileAsDataUrl(file)
+    }
+    renderImagePreview()
     markFormInteraction()
+  })
+
+  cancelEditButton?.addEventListener('click', () => {
+    resetProductForm()
+    state.message = ''
+    renderMessage()
   })
 
   ordersList?.addEventListener('change', async (event) => {
     const target = event.target
-
-    if (!(target instanceof HTMLSelectElement)) {
-      return
-    }
+    if (!(target instanceof HTMLSelectElement)) return
 
     const orderId = target.dataset.orderId
     const status = target.value as OrderStatus
-
-    if (!orderId) {
-      return
-    }
+    if (!orderId) return
 
     await updateOrderStatus(orderId, status)
-    state.message = `${t('orderUpdated')} ${status}`
+    state.message = `${t('orderUpdated')} ${getOrderStatusLabel(status)}`
     renderMessage()
     await refreshDashboard(false, true)
   })
@@ -471,14 +660,10 @@ function bindEvents() {
 
   productForm?.addEventListener('submit', async (event) => {
     event.preventDefault()
-
     const form = event.currentTarget as HTMLFormElement
     const formData = new FormData(form)
     const file = formData.get('imageFile') as File | null
-    let imageValue = FALLBACK_PRODUCT_IMAGE
-    const sizes = Array.from(form.querySelectorAll<HTMLInputElement>('input[name="sizes"]:checked')).map(
-      (input) => input.value,
-    )
+    const sizes = getSelectedSizes()
 
     if (!sizes.length) {
       state.message = t('sizesRequired')
@@ -490,24 +675,37 @@ function bindEvents() {
     renderRefreshStatus()
 
     try {
+      let imageValue = state.imagePreview || FALLBACK_PRODUCT_IMAGE
       if (file && file.size) {
         imageValue = await readFileAsDataUrl(file)
       }
 
-      await addProduct({
-        name: String(formData.get('name') ?? '').trim(),
+      const payload = {
+        name: String(formData.get('nameAr') ?? '').trim(),
+        nameAr: String(formData.get('nameAr') ?? '').trim(),
+        nameEn: String(formData.get('nameEn') ?? '').trim(),
         category: String(formData.get('category') ?? 'men') as Product['category'],
         price: Number(formData.get('price') ?? 0),
-        description: String(formData.get('description') ?? '').trim(),
+        description: String(formData.get('descriptionAr') ?? '').trim(),
+        descriptionAr: String(formData.get('descriptionAr') ?? '').trim(),
+        descriptionEn: String(formData.get('descriptionEn') ?? '').trim(),
         sizes,
-        badge: String(formData.get('badge') ?? '').trim() || t('defaultBadge'),
+        badge: String(formData.get('badgeAr') ?? '').trim() || t('defaultBadgeAr'),
+        badgeAr: String(formData.get('badgeAr') ?? '').trim() || t('defaultBadgeAr'),
+        badgeEn: String(formData.get('badgeEn') ?? '').trim() || t('defaultBadgeEn'),
         image: imageValue,
-      })
+      }
 
-      form.reset()
-      imageFileName && (imageFileName.textContent = t('noFile'))
-      state.message = t('messageAdded')
+      if (state.formMode === 'edit' && state.editingProductId) {
+        await updateProduct(state.editingProductId, payload)
+        state.message = t('messageUpdated')
+      } else {
+        await addProduct(payload)
+        state.message = t('messageAdded')
+      }
+
       renderMessage()
+      resetProductForm()
       resetFormPause()
       await refreshDashboard(false, true)
     } finally {
@@ -518,42 +716,40 @@ function bindEvents() {
 
   productsList?.addEventListener('click', async (event) => {
     const target = event.target
-
-    if (!(target instanceof HTMLButtonElement)) {
-      return
-    }
+    if (!(target instanceof HTMLButtonElement)) return
 
     const productId = target.dataset.productId
-
-    if (!productId) {
-      return
-    }
+    if (!productId) return
 
     const product = state.products.find((item) => item.id === productId)
+    if (!product) return
 
-    if (!product) {
+    if (target.dataset.action === 'edit') {
+      loadProductIntoForm(product)
       return
     }
 
-    const confirmed = window.confirm(
-      `${t('confirmDelete')} "${product.name}"${t('confirmDeleteTail')}`,
-    )
+    if (target.dataset.action === 'delete') {
+      const localized = localizeProduct(product, state.ui.lang)
+      const confirmed = window.confirm(
+        `${t('confirmDelete')} "${localized.name}"${t('confirmDeleteTail')}`,
+      )
+      if (!confirmed) return
 
-    if (!confirmed) {
-      return
-    }
-
-    target.disabled = true
-
-    try {
-      await deleteProduct(productId)
-      state.products = state.products.filter((item) => item.id !== productId)
-      state.message = `${t('messageDeleted')} ${product.name}`
-      renderProducts()
-      renderMessage()
-      await refreshDashboard(false, true)
-    } finally {
-      target.disabled = false
+      target.disabled = true
+      try {
+        await deleteProduct(productId)
+        state.products = state.products.filter((item) => item.id !== productId)
+        state.message = `${t('messageDeleted')} ${localized.name}`
+        if (state.editingProductId === productId) {
+          resetProductForm()
+        }
+        renderProducts()
+        renderMessage()
+        await refreshDashboard(false, true)
+      } finally {
+        target.disabled = false
+      }
     }
   })
 }
@@ -567,12 +763,10 @@ function renderAll() {
 }
 
 function renderStats() {
-  if (!statsGrid) {
-    return
-  }
+  if (!statsGrid) return
 
   const totalOrders = state.orders.length
-  const pendingOrders = state.orders.filter((order) => order.status !== 'تم التسليم').length
+  const pendingOrders = state.orders.filter((order) => order.status !== 'delivered').length
   const totalSales = state.orders.reduce((sum, order) => sum + order.total, 0)
 
   statsGrid.innerHTML = `
@@ -592,7 +786,16 @@ function renderStats() {
 }
 
 function renderOrders() {
-  if (!ordersList) {
+  if (!ordersList) return
+
+  if (state.loading) {
+    ordersList.innerHTML = Array.from({ length: 3 }, () => `
+      <article class="order-card order-card--skeleton">
+        <div class="skeleton skeleton-line skeleton-line--short"></div>
+        <div class="skeleton skeleton-line"></div>
+        <div class="skeleton skeleton-line"></div>
+      </article>
+    `).join('')
     return
   }
 
@@ -607,18 +810,21 @@ function renderOrders() {
         <article class="order-card">
           <div class="order-card__top">
             <div>
-              <strong>${order.customerName}</strong>
-              <p>${order.phone}</p>
+              <strong>${escapeHtml(order.customerName)}</strong>
+              <p>${escapeHtml(order.phone)}</p>
             </div>
             <div class="order-card__meta">
               <span>${formatPrice(order.total)}</span>
               <small>${formatDate(order.createdAt)}</small>
             </div>
           </div>
-          <p class="order-address">${order.address}</p>
+          <p class="order-address">${escapeHtml(order.address)}</p>
           <div class="order-items">
             ${order.items
-              .map((item) => `<span>${item.name} / ${item.size} × ${item.quantity}</span>`)
+              .map(
+                (item) =>
+                  `<span>${escapeHtml(item.name)} / ${item.size} × ${item.quantity}</span>`,
+              )
               .join('')}
           </div>
           <div class="order-footer">
@@ -629,14 +835,14 @@ function renderOrders() {
                   .map(
                     (status) => `
                       <option value="${status}" ${order.status === status ? 'selected' : ''}>
-                        ${status}
+                        ${getOrderStatusLabel(status)}
                       </option>
                     `,
                   )
                   .join('')}
               </select>
             </label>
-            <small>${order.notes || t('noNotes')}</small>
+            <small>${escapeHtml(order.notes || t('noNotes'))}</small>
           </div>
         </article>
       `,
@@ -644,16 +850,19 @@ function renderOrders() {
     .join('')
 }
 
-function getProductImageStyle(image: string) {
-  if (image.startsWith('linear-gradient') || image.startsWith('radial-gradient')) {
-    return `background:${image};`
-  }
-
-  return `background-image:url("${image}");background-size:cover;background-position:center;background-repeat:no-repeat;background-color:#e5e7eb;`
-}
-
 function renderProducts() {
-  if (!productsList) {
+  if (!productsList) return
+
+  if (state.loading) {
+    productsList.innerHTML = Array.from({ length: 4 }, () => `
+      <article class="mini-product mini-product--skeleton">
+        <div class="mini-product__image skeleton"></div>
+        <div class="mini-product__content">
+          <div class="skeleton skeleton-line skeleton-line--short"></div>
+          <div class="skeleton skeleton-line"></div>
+        </div>
+      </article>
+    `).join('')
     return
   }
 
@@ -663,38 +872,45 @@ function renderProducts() {
   }
 
   productsList.innerHTML = state.products
-    .map(
-      (product) => `
+    .map((product) => {
+      const localized = localizeProduct(product, state.ui.lang)
+      const category = localizeCategory(
+        categories.find((entry) => entry.id === product.category) ?? categories[0],
+        state.ui.lang,
+      )
+
+      return `
         <article class="mini-product">
           <div class="mini-product__image" style="${getProductImageStyle(product.image)}"></div>
           <div class="mini-product__content">
             <div>
-              <strong>${localizeProduct(product, state.ui.lang).name}</strong>
-              <p>${localizeCategory(categories.find((category) => category.id === product.category) ?? categories[0], state.ui.lang).name} · ${formatPrice(product.price)}</p>
+              <strong>${escapeHtml(localized.name)}</strong>
+              <p>${escapeHtml(category.name)} · ${formatPrice(product.price)} · ${product.sizes.join(', ')}</p>
             </div>
-            <button class="danger-button" type="button" data-product-id="${product.id}">
-              ${t('delete')}
-            </button>
+            <div class="mini-product__actions">
+              <button class="tool-btn" type="button" data-action="edit" data-product-id="${product.id}">
+                ${t('edit')}
+              </button>
+              <button class="danger-button" type="button" data-action="delete" data-product-id="${product.id}">
+                ${t('delete')}
+              </button>
+            </div>
           </div>
         </article>
-      `,
-    )
+      `
+    })
     .join('')
 }
 
 function renderMessage() {
-  if (!adminMessage) {
-    return
-  }
+  if (!adminMessage) return
 
   adminMessage.hidden = !state.message
   adminMessage.textContent = state.message
 }
 
 function renderRefreshStatus() {
-  if (!refreshStatus) {
-    return
-  }
+  if (!refreshStatus) return
 
   if (state.loading) {
     refreshStatus.textContent = t('updating')
@@ -736,6 +952,8 @@ async function refreshDashboard(showLoading = true, force = false) {
   if (showLoading) {
     state.loading = true
     renderRefreshStatus()
+    renderOrders()
+    renderProducts()
   }
 
   try {

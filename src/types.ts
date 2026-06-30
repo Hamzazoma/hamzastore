@@ -17,11 +17,17 @@ export interface Category {
 export interface Product {
   id: string
   name: string
+  nameAr?: string
+  nameEn?: string
   category: CategoryId
   price: number
   sizes: string[]
   description: string
+  descriptionAr?: string
+  descriptionEn?: string
   badge?: string
+  badgeAr?: string
+  badgeEn?: string
   image: string
   createdAt: string
 }
@@ -32,7 +38,7 @@ export interface CartItem {
   quantity: number
 }
 
-export type OrderStatus = 'جديد' | 'قيد التجهيز' | 'تم الشحن' | 'تم التسليم'
+export type OrderStatus = 'new' | 'preparing' | 'shipped' | 'delivered'
 
 export interface OrderItem {
   productId: string
