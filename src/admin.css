@@ -1,0 +1,286 @@
+:root {
+  color: #111827;
+  background: #f3f4f6;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.5;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 20%),
+    radial-gradient(circle at left, rgba(217, 70, 239, 0.08), transparent 18%),
+    #f3f4f6;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+.admin-shell {
+  max-width: 1380px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.admin-hero,
+.stat-card,
+.admin-panel,
+.order-card {
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+}
+
+.admin-hero {
+  padding: 26px 28px;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+}
+
+.eyebrow {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-hero h1,
+.section-head h2 {
+  margin: 10px 0 0;
+}
+
+.admin-hero p {
+  margin: 12px 0 0;
+  max-width: 720px;
+  color: #4b5563;
+}
+
+.admin-hero__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-hero__actions a,
+.admin-hero__actions button,
+.product-form button {
+  border: 0;
+  border-radius: 999px;
+  padding: 13px 18px;
+  background: #111827;
+  color: #fff;
+}
+
+.admin-hero__actions a {
+  background: #fff;
+  color: #111827;
+  border: 1px solid #d1d5db;
+}
+
+.stats-grid {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.stat-card {
+  padding: 22px;
+}
+
+.stat-card small {
+  color: #6b7280;
+}
+
+.stat-card strong {
+  display: block;
+  margin-top: 12px;
+  font-size: 34px;
+}
+
+.admin-layout {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
+  gap: 18px;
+}
+
+.admin-panel {
+  padding: 20px;
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-head small {
+  color: #6b7280;
+}
+
+.orders-list,
+.mini-products,
+.product-form {
+  margin-top: 18px;
+}
+
+.orders-list {
+  display: grid;
+  gap: 14px;
+}
+
+.order-card {
+  padding: 18px;
+}
+
+.order-card__top,
+.order-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.order-card__meta {
+  text-align: left;
+}
+
+.order-card__meta span {
+  display: block;
+  font-weight: 700;
+}
+
+.order-card__meta small,
+.order-address,
+.mini-product p,
+.admin-message,
+.empty-state {
+  color: #6b7280;
+}
+
+.order-address {
+  margin: 12px 0;
+}
+
+.order-items {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.order-items span {
+  background: #f3f4f6;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 14px;
+}
+
+.order-footer {
+  margin-top: 14px;
+}
+
+.order-footer label,
+.product-form label {
+  display: grid;
+  gap: 8px;
+}
+
+.order-footer select,
+.product-form input,
+.product-form select,
+.product-form textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 16px;
+  padding: 14px 16px;
+  background: #fff;
+}
+
+.product-form {
+  display: grid;
+  gap: 12px;
+}
+
+.product-form textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.admin-message {
+  margin: 14px 0 0;
+  font-weight: 600;
+}
+
+.mini-products {
+  display: grid;
+  gap: 12px;
+}
+
+.mini-product {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.mini-product__image {
+  width: 62px;
+  height: 62px;
+  border-radius: 18px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1080px) {
+  .admin-layout,
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .admin-shell {
+    padding: 14px;
+  }
+
+  .admin-hero,
+  .order-card__top,
+  .order-footer,
+  .section-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
