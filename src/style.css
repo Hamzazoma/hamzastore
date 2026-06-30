@@ -67,6 +67,20 @@ a {
   gap: 24px;
 }
 
+.topbar__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.topbar__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .brand-tag,
 .eyebrow {
   display: inline-flex;
@@ -118,6 +132,14 @@ a {
   transition: background 0.2s ease;
 }
 
+.tool-btn {
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
 .top-links a:hover {
   background: rgba(255, 255, 255, 0.16);
 }
@@ -153,6 +175,10 @@ a {
   text-align: right;
   color: #fff;
   background: linear-gradient(135deg, var(--accent), #111827);
+}
+
+html[dir='ltr'] .hero-menu__item {
+  text-align: left;
 }
 
 .hero-menu__item span,
@@ -540,6 +566,10 @@ a {
     align-items: stretch;
   }
 
+  .topbar__right {
+    justify-content: flex-start;
+  }
+
   .category-strip,
   .product-grid {
     grid-template-columns: 1fr;
@@ -548,4 +578,64 @@ a {
   .hero-main {
     padding: 24px;
   }
+}
+
+/* Dark theme */
+html[data-theme='dark'] body {
+  background:
+    radial-gradient(circle at top right, rgba(148, 163, 184, 0.08), transparent 24%),
+    radial-gradient(circle at top left, rgba(51, 65, 85, 0.18), transparent 28%),
+    #05070c;
+  color: #e5e7eb;
+}
+
+html[data-theme='dark'] .hero-menu,
+html[data-theme='dark'] .hero-side,
+html[data-theme='dark'] .category-card,
+html[data-theme='dark'] .product-card,
+html[data-theme='dark'] .cart-panel,
+html[data-theme='dark'] .filters {
+  background: #0b1220;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.4);
+}
+
+html[data-theme='dark'] .category-card small,
+html[data-theme='dark'] .product-card__meta,
+html[data-theme='dark'] .product-card p,
+html[data-theme='dark'] .cart-item p,
+html[data-theme='dark'] .empty-state {
+  color: rgba(229, 231, 235, 0.74);
+}
+
+html[data-theme='dark'] .filters__chips button {
+  background: rgba(148, 163, 184, 0.14);
+  color: #e5e7eb;
+}
+
+html[data-theme='dark'] .filters__chips button.active {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+html[data-theme='dark'] .sizes-row span,
+html[data-theme='dark'] .cart-item__controls button {
+  background: rgba(148, 163, 184, 0.14);
+  color: #e5e7eb;
+}
+
+html[data-theme='dark'] .cart-item {
+  border-color: rgba(148, 163, 184, 0.24);
+}
+
+html[data-theme='dark'] .size-filter select,
+html[data-theme='dark'] .product-card__actions select,
+html[data-theme='dark'] .checkout-form input,
+html[data-theme='dark'] .checkout-form textarea {
+  background: rgba(15, 23, 42, 0.78);
+  border-color: rgba(148, 163, 184, 0.24);
+  color: #e5e7eb;
+}
+
+html[data-theme='dark'] .notice {
+  color: #4ade80;
 }

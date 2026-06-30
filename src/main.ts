@@ -11,11 +11,145 @@ if (!app) {
 const appRoot = app
 const categories = getCategories()
 
+type Lang = 'ar' | 'en'
+type Theme = 'light' | 'dark'
+
+const LANG_KEY = 'storefront-lang'
+const THEME_KEY = 'storefront-theme'
+
+function readStoredLang(): Lang {
+  const stored = localStorage.getItem(LANG_KEY)
+  return stored === 'en' ? 'en' : 'ar'
+}
+
+function readStoredTheme(): Theme {
+  const stored = localStorage.getItem(THEME_KEY)
+  return stored === 'dark' ? 'dark' : 'light'
+}
+
+function applyLanguage(lang: Lang) {
+  document.documentElement.lang = lang
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'
+}
+
+function applyTheme(theme: Theme) {
+  document.documentElement.dataset.theme = theme
+}
+
+const messages: Record<Lang, Record<string, string>> = {
+  ar: {
+    brandTag: 'متجر أزياء',
+    headline: 'واجهة متجر بسيطة وسريعة',
+    subhead: 'تسوق بسهولة، واختَر المقاس، وأرسل الطلب مباشرة. لوحة الإدارة متاحة لإضافة المنتجات ومتابعة الطلبات.',
+    navProducts: 'المنتجات',
+    navWorldCup: 'منتخبات',
+    navAdmin: 'لوحة الإدارة',
+    toggleLang: 'English',
+    toggleThemeLight: 'لايت',
+    toggleThemeDark: 'دارك',
+    heroBadge: 'واجهة متجر',
+    heroTitle: 'قسم منتخبات خاص بمناسبة كأس العالم',
+    heroText: 'اضغط على أي قسم من الأعلى وسيتم نقلك مباشرة إلى المنتجات المناسبة له، مع فلترة المقاسات بسهولة.',
+    heroShop: 'تسوق المنتخبات',
+    heroAll: 'عرض كل المنتجات',
+    promoMen: 'رجال',
+    promoMenText: 'تخفيضات حتى 30%',
+    promoShoes: 'جزم',
+    promoShoesText: 'موديلات جديدة',
+    promoKids: 'أطفال',
+    promoKidsText: 'مقاسات متعددة',
+    sectionsEyebrow: 'الأقسام الرئيسية',
+    sectionsTitle: 'رجال، سيدات، بنات، أطفال، جزم، ومنتخبات',
+    filtersAll: 'الكل',
+    sizeLabel: 'اختيار المقاس',
+    sizeAll: 'كل المقاسات',
+    categoryFallback: '',
+    addToCart: 'أضف للسلة',
+    cartEyebrow: 'سلة العميل',
+    cartTitle: 'الطلب الحالي',
+    cartEmpty: 'السلة فارغة حاليًا. اختر منتجًا ومقاسًا لإضافته.',
+    cartSize: 'مقاس',
+    cartRemove: 'حذف',
+    customerName: 'اسم العميل',
+    customerNamePlaceholder: 'اكتب الاسم',
+    phone: 'رقم الهاتف',
+    phonePlaceholder: '01xxxxxxxxx',
+    address: 'العنوان',
+    addressPlaceholder: 'المدينة - المنطقة - الشارع',
+    notes: 'ملاحظات',
+    notesPlaceholder: 'أي تفاصيل إضافية',
+    checkout: 'تأكيد الطلب',
+    checkoutSending: 'جارٍ إرسال الطلب...',
+    noticeNeedProduct: 'أضف منتجًا واحدًا على الأقل قبل تأكيد الطلب.',
+    noticeNeedCustomer: 'من فضلك أكمل بيانات العميل الأساسية.',
+    noticeSuccess: 'تم إرسال الطلب بنجاح، وستراه فورًا داخل لوحة الإدارة.',
+    noticeFail: 'حدثت مشكلة أثناء إرسال الطلب. جرّب مرة أخرى.',
+  },
+  en: {
+    brandTag: 'Fashion Store',
+    headline: 'Simple & fast storefront',
+    subhead:
+      'Shop easily, pick a size, and send your order instantly. Admin panel is available to manage products and orders.',
+    navProducts: 'Products',
+    navWorldCup: 'Teams',
+    navAdmin: 'Admin',
+    toggleLang: 'العربية',
+    toggleThemeLight: 'Light',
+    toggleThemeDark: 'Dark',
+    heroBadge: 'Storefront',
+    heroTitle: 'World Cup teams collection',
+    heroText:
+      'Tap any category to jump to matching products and filter sizes easily.',
+    heroShop: 'Shop teams',
+    heroAll: 'View all products',
+    promoMen: 'Men',
+    promoMenText: 'Up to 30% off',
+    promoShoes: 'Shoes',
+    promoShoesText: 'New arrivals',
+    promoKids: 'Kids',
+    promoKidsText: 'Many sizes',
+    sectionsEyebrow: 'Main categories',
+    sectionsTitle: 'Men, Women, Girls, Kids, Shoes, and Teams',
+    filtersAll: 'All',
+    sizeLabel: 'Size',
+    sizeAll: 'All sizes',
+    categoryFallback: '',
+    addToCart: 'Add to cart',
+    cartEyebrow: 'Cart',
+    cartTitle: 'Current order',
+    cartEmpty: 'Your cart is empty. Pick a product and a size.',
+    cartSize: 'Size',
+    cartRemove: 'Remove',
+    customerName: 'Customer name',
+    customerNamePlaceholder: 'Type your name',
+    phone: 'Phone number',
+    phonePlaceholder: '01xxxxxxxxx',
+    address: 'Address',
+    addressPlaceholder: 'City - area - street',
+    notes: 'Notes',
+    notesPlaceholder: 'Any extra details',
+    checkout: 'Place order',
+    checkoutSending: 'Sending...',
+    noticeNeedProduct: 'Please add at least one item before placing the order.',
+    noticeNeedCustomer: 'Please fill in the required customer details.',
+    noticeSuccess: 'Order sent successfully. You will see it in the Admin panel.',
+    noticeFail: 'Something went wrong while sending the order. Please try again.',
+  },
+}
+
+function t(key: keyof (typeof messages)['ar']) {
+  return messages[state.ui.lang][key] ?? messages.ar[key] ?? String(key)
+}
+
 const state: {
   products: Product[]
   cart: CartItem[]
   selectedCategory: CategoryId | 'all'
   selectedSize: string
+  ui: {
+    lang: Lang
+    theme: Theme
+  }
   checkout: {
     customerName: string
     phone: string
@@ -29,6 +163,10 @@ const state: {
   cart: [],
   selectedCategory: 'all',
   selectedSize: 'all',
+  ui: {
+    lang: readStoredLang(),
+    theme: readStoredTheme(),
+  },
   checkout: {
     customerName: '',
     phone: '',
@@ -40,7 +178,7 @@ const state: {
 }
 
 function formatPrice(value: number) {
-  return new Intl.NumberFormat('ar-EG', {
+  return new Intl.NumberFormat(state.ui.lang === 'ar' ? 'ar-EG' : 'en-US', {
     style: 'currency',
     currency: 'EGP',
     maximumFractionDigits: 0,
@@ -93,20 +231,31 @@ function render() {
   const cartItems = buildCartDetails()
   const cartTotal = getCartTotal()
 
+  applyLanguage(state.ui.lang)
+  applyTheme(state.ui.theme)
+
   appRoot.innerHTML = `
     <div class="site-shell">
       <header class="topbar">
         <div class="topbar__inner">
           <div class="brand-block">
-            <span class="brand-tag">متجر أزياء</span>
-            <h1>ستايل قريب من الواجهة التي طلبتها</h1>
-            <p>واجهة عربية مستوحاة من أسلوب المتاجر الكبيرة، مع أقسام واضحة وطلبات مرتبطة بلوحة الإدارة.</p>
+            <span class="brand-tag">${t('brandTag')}</span>
+            <h1>${t('headline')}</h1>
+            <p>${t('subhead')}</p>
           </div>
-          <nav class="top-links">
-            <a href="#products">المنتجات</a>
-            <a href="#world-cup">منتخبات</a>
-            <a href="admin.html">لوحة الإدارة</a>
-          </nav>
+          <div class="topbar__right">
+            <nav class="top-links">
+              <a href="#products">${t('navProducts')}</a>
+              <a href="#world-cup">${t('navWorldCup')}</a>
+              <a href="admin.html">${t('navAdmin')}</a>
+            </nav>
+            <div class="topbar__actions">
+              <button id="toggle-lang" class="tool-btn" type="button">${t('toggleLang')}</button>
+              <button id="toggle-theme" class="tool-btn" type="button">
+                ${state.ui.theme === 'dark' ? t('toggleThemeLight') : t('toggleThemeDark')}
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -125,27 +274,27 @@ function render() {
         </aside>
 
         <div class="hero-main" id="world-cup">
-          <div class="hero-badge">SHEIN style / Arabic landing</div>
-          <h2>قسم منتخبات خاص بمناسبة كأس العالم</h2>
-          <p>اضغط على أي قسم من الأعلى وسيتم نقلك مباشرة إلى المنتجات المناسبة له، مع فلترة المقاسات بسهولة.</p>
+          <div class="hero-badge">${t('heroBadge')}</div>
+          <h2>${t('heroTitle')}</h2>
+          <p>${t('heroText')}</p>
           <div class="hero-actions">
-            <button class="primary-btn" data-category="world-cup">تسوق المنتخبات</button>
-            <button class="ghost-btn" data-scroll="products">عرض كل المنتجات</button>
+            <button class="primary-btn" data-category="world-cup">${t('heroShop')}</button>
+            <button class="ghost-btn" data-scroll="products">${t('heroAll')}</button>
           </div>
         </div>
 
         <div class="hero-side">
           <div class="hero-promo">
-            <span>رجال</span>
-            <strong>تخفيضات حتى 30%</strong>
+            <span>${t('promoMen')}</span>
+            <strong>${t('promoMenText')}</strong>
           </div>
           <div class="hero-promo alt">
-            <span>جزم</span>
-            <strong>موديلات جديدة</strong>
+            <span>${t('promoShoes')}</span>
+            <strong>${t('promoShoesText')}</strong>
           </div>
           <div class="hero-promo soft">
-            <span>أطفال</span>
-            <strong>مقاسات متعددة</strong>
+            <span>${t('promoKids')}</span>
+            <strong>${t('promoKidsText')}</strong>
           </div>
         </div>
       </section>
@@ -168,15 +317,14 @@ function render() {
         <section class="catalog-column">
           <div class="section-head">
             <div>
-              <span class="eyebrow">الأقسام الرئيسية</span>
-              <h3>رجال، سيدات، بنات، أطفال، جزم، ومنتخبات</h3>
+              <span class="eyebrow">${t('sectionsEyebrow')}</span>
+              <h3>${t('sectionsTitle')}</h3>
             </div>
-            <a class="admin-link" href="admin.html">فتح الإدارة</a>
           </div>
 
           <section class="filters" id="products">
             <div class="filters__chips">
-              <button class="${state.selectedCategory === 'all' ? 'active' : ''}" data-category="all">الكل</button>
+              <button class="${state.selectedCategory === 'all' ? 'active' : ''}" data-category="all">${t('filtersAll')}</button>
               ${categories
                 .map(
                   (category) => `
@@ -189,13 +337,13 @@ function render() {
             </div>
 
             <label class="size-filter">
-              <span>اختيار المقاس</span>
+              <span>${t('sizeLabel')}</span>
               <select id="size-select">
                 ${allSizes
                   .map(
                     (size) => `
                       <option value="${size}" ${state.selectedSize === size ? 'selected' : ''}>
-                        ${size === 'all' ? 'كل المقاسات' : size}
+                        ${size === 'all' ? t('sizeAll') : size}
                       </option>
                     `,
                   )
@@ -228,7 +376,7 @@ function render() {
                             .map((size) => `<option value="${size}">${size}</option>`)
                             .join('')}
                         </select>
-                        <button class="primary-btn small" data-add-product="${product.id}">أضف للسلة</button>
+                        <button class="primary-btn small" data-add-product="${product.id}">${t('addToCart')}</button>
                       </div>
                     </div>
                   </article>
@@ -242,8 +390,8 @@ function render() {
           <section class="cart-panel">
             <div class="section-head compact">
               <div>
-                <span class="eyebrow">سلة العميل</span>
-                <h3>الطلب الحالي</h3>
+                <span class="eyebrow">${t('cartEyebrow')}</span>
+                <h3>${t('cartTitle')}</h3>
               </div>
               <strong>${formatPrice(cartTotal)}</strong>
             </div>
@@ -257,40 +405,40 @@ function render() {
                           <div class="cart-item">
                             <div>
                               <strong>${item.name}</strong>
-                              <p>مقاس ${item.size} × ${item.quantity}</p>
+                              <p>${t('cartSize')} ${item.size} × ${item.quantity}</p>
                             </div>
                             <div class="cart-item__controls">
                               <button data-cart-action="increase" data-product-id="${item.productId}" data-size="${item.size}">+</button>
                               <button data-cart-action="decrease" data-product-id="${item.productId}" data-size="${item.size}">-</button>
-                              <button data-cart-action="remove" data-product-id="${item.productId}" data-size="${item.size}">حذف</button>
+                              <button data-cart-action="remove" data-product-id="${item.productId}" data-size="${item.size}">${t('cartRemove')}</button>
                             </div>
                           </div>
                         `,
                       )
                       .join('')
-                  : '<p class="empty-state">السلة فارغة حاليًا. اختر منتجًا ومقاسًا لإضافته.</p>'
+                  : `<p class="empty-state">${t('cartEmpty')}</p>`
               }
             </div>
 
             <form class="checkout-form" id="checkout-form">
               <label>
-                <span>اسم العميل</span>
-                <input name="customerName" value="${state.checkout.customerName}" placeholder="اكتب الاسم" required />
+                <span>${t('customerName')}</span>
+                <input name="customerName" value="${state.checkout.customerName}" placeholder="${t('customerNamePlaceholder')}" required />
               </label>
               <label>
-                <span>رقم الهاتف</span>
-                <input name="phone" value="${state.checkout.phone}" placeholder="01xxxxxxxxx" required />
+                <span>${t('phone')}</span>
+                <input name="phone" value="${state.checkout.phone}" placeholder="${t('phonePlaceholder')}" required />
               </label>
               <label>
-                <span>العنوان</span>
-                <textarea name="address" placeholder="المدينة - المنطقة - الشارع" required>${state.checkout.address}</textarea>
+                <span>${t('address')}</span>
+                <textarea name="address" placeholder="${t('addressPlaceholder')}" required>${state.checkout.address}</textarea>
               </label>
               <label>
-                <span>ملاحظات</span>
-                <textarea name="notes" placeholder="أي تفاصيل إضافية">${state.checkout.notes}</textarea>
+                <span>${t('notes')}</span>
+                <textarea name="notes" placeholder="${t('notesPlaceholder')}">${state.checkout.notes}</textarea>
               </label>
               <button class="primary-btn checkout-btn" type="submit" ${state.submitting ? 'disabled' : ''}>
-                ${state.submitting ? 'جارٍ إرسال الطلب...' : 'تأكيد الطلب'}
+                ${state.submitting ? t('checkoutSending') : t('checkout')}
               </button>
               ${state.notice ? `<p class="notice">${state.notice}</p>` : ''}
             </form>
@@ -299,6 +447,19 @@ function render() {
       </main>
     </div>
   `
+
+  document.querySelector('#toggle-lang')?.addEventListener('click', () => {
+    state.ui.lang = state.ui.lang === 'ar' ? 'en' : 'ar'
+    localStorage.setItem(LANG_KEY, state.ui.lang)
+    render()
+  })
+
+  document.querySelector('#toggle-theme')?.addEventListener('click', () => {
+    state.ui.theme = state.ui.theme === 'dark' ? 'light' : 'dark'
+    localStorage.setItem(THEME_KEY, state.ui.theme)
+    applyTheme(state.ui.theme)
+    render()
+  })
 
   document.querySelectorAll<HTMLElement>('[data-category]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -378,13 +539,13 @@ function render() {
     event.preventDefault()
 
     if (!state.cart.length) {
-      state.notice = 'أضف منتجًا واحدًا على الأقل قبل تأكيد الطلب.'
+      state.notice = t('noticeNeedProduct')
       render()
       return
     }
 
     if (!state.checkout.customerName || !state.checkout.phone || !state.checkout.address) {
-      state.notice = 'من فضلك أكمل بيانات العميل الأساسية.'
+      state.notice = t('noticeNeedCustomer')
       render()
       return
     }
@@ -410,9 +571,9 @@ function render() {
         address: '',
         notes: '',
       }
-      state.notice = 'تم إرسال الطلب بنجاح، وستراه فورًا داخل لوحة الإدارة.'
+      state.notice = t('noticeSuccess')
     } catch {
-      state.notice = 'حدثت مشكلة أثناء إرسال الطلب. جرّب مرة أخرى.'
+      state.notice = t('noticeFail')
     } finally {
       state.submitting = false
       render()
@@ -421,6 +582,8 @@ function render() {
 }
 
 async function bootstrap() {
+  applyLanguage(state.ui.lang)
+  applyTheme(state.ui.theme)
   state.products = await getProducts()
   render()
 }

@@ -28,6 +28,17 @@ textarea {
   font: inherit;
 }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
 button {
   cursor: pointer;
 }
@@ -99,6 +110,14 @@ a {
   padding: 13px 18px;
   background: #111827;
   color: #fff;
+}
+
+.tool-btn {
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  padding: 12px 16px;
+  background: #fff;
+  color: #111827;
 }
 
 .admin-hero__actions a {
@@ -243,6 +262,53 @@ a {
   resize: vertical;
 }
 
+.sizes-picker {
+  display: grid;
+  gap: 10px;
+}
+
+.field-label {
+  font-weight: 700;
+}
+
+.field-hint {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.sizes-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.size-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  cursor: pointer;
+}
+
+.size-chip input {
+  margin: 0;
+}
+
+.file-picker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.file-name {
+  color: #6b7280;
+  font-size: 14px;
+}
+
 .admin-message {
   margin: 14px 0 0;
   font-weight: 600;
@@ -290,6 +356,60 @@ a {
 .danger-button:disabled {
   cursor: wait;
   opacity: 0.7;
+}
+
+/* Dark theme */
+html[data-theme='dark'] body {
+  background:
+    radial-gradient(circle at top right, rgba(148, 163, 184, 0.08), transparent 20%),
+    radial-gradient(circle at left, rgba(51, 65, 85, 0.18), transparent 18%),
+    #05070c;
+  color: #e5e7eb;
+}
+
+html[data-theme='dark'] .admin-hero,
+html[data-theme='dark'] .stat-card,
+html[data-theme='dark'] .admin-panel,
+html[data-theme='dark'] .order-card {
+  background: #0b1220;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.4);
+}
+
+html[data-theme='dark'] .admin-hero p,
+html[data-theme='dark'] .order-card__meta small,
+html[data-theme='dark'] .order-address,
+html[data-theme='dark'] .mini-product p,
+html[data-theme='dark'] .admin-message,
+html[data-theme='dark'] .empty-state,
+html[data-theme='dark'] .field-hint,
+html[data-theme='dark'] .file-name {
+  color: rgba(229, 231, 235, 0.74);
+}
+
+html[data-theme='dark'] .order-footer select,
+html[data-theme='dark'] .product-form input,
+html[data-theme='dark'] .product-form select,
+html[data-theme='dark'] .product-form textarea {
+  background: rgba(15, 23, 42, 0.78);
+  border-color: rgba(148, 163, 184, 0.24);
+  color: #e5e7eb;
+}
+
+html[data-theme='dark'] .order-items span,
+html[data-theme='dark'] .mini-product {
+  background: rgba(148, 163, 184, 0.12);
+}
+
+html[data-theme='dark'] .tool-btn,
+html[data-theme='dark'] .admin-hero__actions a {
+  background: rgba(15, 23, 42, 0.6);
+  color: #e5e7eb;
+  border-color: rgba(148, 163, 184, 0.24);
+}
+
+html[data-theme='dark'] .size-chip {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(148, 163, 184, 0.24);
 }
 
 @media (max-width: 1080px) {
