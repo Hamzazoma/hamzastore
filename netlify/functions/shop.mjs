@@ -2,11 +2,12 @@ import { getStore } from '@netlify/blobs'
 import { defaultProducts } from '../../shared/default-data.mjs'
 
 const store = getStore('fashion-store')
+const PRODUCTS_SEEDED_KEY = 'meta:products-seeded'
 
 const headers = {
   'Content-Type': 'application/json; charset=utf-8',
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 }
 
@@ -31,10 +32,15 @@ async function listJson(prefix) {
 }
 
 async function ensureSeedProducts() {
+  const hasSeededBefore = await store.get(PRODUCTS_SEEDED_KEY, { type: 'json' })
   const existing = await listJson('product:')
 
   if (existing.length) {
     return existing
+  }
+
+  if (hasSeededBefore) {
+    return []
   }
 
   await Promise.all(
@@ -42,6 +48,7 @@ async function ensureSeedProducts() {
       store.setJSON(`product:${product.id}`, product),
     ),
   )
+  await store.setJSON(PRODUCTS_SEEDED_KEY, true)
 
   return defaultProducts
 }
@@ -73,7 +80,20 @@ export default async function handler(request) {
     if (request.method === 'POST' && entity === 'products') {
       const product = await request.json()
       await store.setJSON(`product:${product.id}`, product)
+      await store.setJSON(PRODUCTS_SEEDED_KEY, true)
       return json({ product }, 201)
+    }
+
+    if (request.method === 'DELETE' && entity === 'products' && id) {
+      const currentProduct = await store.get(`product:${id}`, { type: 'json' })
+
+      if (!currentProduct) {
+        return json({ message: 'المنتج غير موجود.' }, 404)
+      }
+
+      await store.delete(`product:${id}`)
+      await store.setJSON(PRODUCTS_SEEDED_KEY, true)
+      return json({ deleted: true, id })
     }
 
     if (request.method === 'GET' && entity === 'orders') {

@@ -3,6 +3,7 @@ import type { Category, Order, OrderStatus, Product } from './types.ts'
 
 const API_URL = '/.netlify/functions/shop'
 const PRODUCTS_KEY = 'fashion-store-products'
+const PRODUCTS_SEEDED_KEY = 'fashion-store-products-seeded'
 const ORDERS_KEY = 'fashion-store-orders'
 
 const categoryList = categories as Category[]
@@ -31,10 +32,15 @@ function writeStorage<T>(key: string, value: T) {
 }
 
 function ensureLocalSeed() {
+  const hasSeededBefore = localStorage.getItem(PRODUCTS_SEEDED_KEY) === 'true'
   const existingProducts = readStorage<Product[]>(PRODUCTS_KEY, [])
 
-  if (!existingProducts.length) {
+  if (!hasSeededBefore && !existingProducts.length) {
     writeStorage(PRODUCTS_KEY, cloneProducts(productSeed))
+  }
+
+  if (!hasSeededBefore) {
+    localStorage.setItem(PRODUCTS_SEEDED_KEY, 'true')
   }
 }
 
@@ -64,9 +70,9 @@ export async function getProducts() {
 
   try {
     const result = await tryApi<{ products: Product[] }>('?entity=products')
-    const products = result.products.length ? result.products : cloneProducts(productSeed)
-    writeStorage(PRODUCTS_KEY, products)
-    return products
+    writeStorage(PRODUCTS_KEY, result.products)
+    localStorage.setItem(PRODUCTS_SEEDED_KEY, 'true')
+    return result.products
   } catch {
     return readStorage<Product[]>(PRODUCTS_KEY, cloneProducts(productSeed))
   }
@@ -88,12 +94,34 @@ export async function addProduct(product: Omit<Product, 'id' | 'createdAt'>) {
     })
     const cached = readStorage<Product[]>(PRODUCTS_KEY, cloneProducts(productSeed))
     writeStorage(PRODUCTS_KEY, [result.product, ...cached.filter((item) => item.id !== result.product.id)])
+    localStorage.setItem(PRODUCTS_SEEDED_KEY, 'true')
     return result.product
   } catch {
     const cached = readStorage<Product[]>(PRODUCTS_KEY, cloneProducts(productSeed))
     const next = [payload, ...cached]
     writeStorage(PRODUCTS_KEY, next)
+    localStorage.setItem(PRODUCTS_SEEDED_KEY, 'true')
     return payload
+  }
+}
+
+export async function deleteProduct(id: string) {
+  ensureLocalSeed()
+
+  try {
+    await tryApi<{ deleted: boolean; id: string }>(`?entity=products&id=${id}`, {
+      method: 'DELETE',
+    })
+
+    const cached = readStorage<Product[]>(PRODUCTS_KEY, cloneProducts(productSeed))
+    const next = cached.filter((product) => product.id !== id)
+    writeStorage(PRODUCTS_KEY, next)
+    return { deleted: true, id }
+  } catch {
+    const cached = readStorage<Product[]>(PRODUCTS_KEY, cloneProducts(productSeed))
+    const next = cached.filter((product) => product.id !== id)
+    writeStorage(PRODUCTS_KEY, next)
+    return { deleted: true, id }
   }
 }
 
