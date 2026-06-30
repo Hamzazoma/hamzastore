@@ -407,11 +407,21 @@ html[dir='ltr'] .hero-menu__item {
 
 .product-card {
   overflow: hidden;
+  position: relative;
 }
 
 .product-card__image {
   height: 220px;
   position: relative;
+}
+
+.product-card__click {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  z-index: 1;
 }
 
 .product-card__image span {
@@ -427,6 +437,8 @@ html[dir='ltr'] .hero-menu__item {
 
 .product-card__body {
   padding: 18px;
+  position: relative;
+  z-index: 2;
 }
 
 .product-card__meta {
@@ -463,6 +475,16 @@ html[dir='ltr'] .hero-menu__item {
   display: flex;
   gap: 12px;
   margin-top: 18px;
+  position: relative;
+  z-index: 3;
+}
+
+.ghost-inline-btn {
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  padding: 12px 16px;
+  background: #fff;
+  color: #111827;
 }
 
 .cart-panel {
@@ -631,6 +653,12 @@ html[data-theme='dark'] .size-filter select,
 html[data-theme='dark'] .product-card__actions select,
 html[data-theme='dark'] .checkout-form input,
 html[data-theme='dark'] .checkout-form textarea {
+  background: rgba(15, 23, 42, 0.78);
+  border-color: rgba(148, 163, 184, 0.24);
+  color: #e5e7eb;
+}
+
+html[data-theme='dark'] .ghost-inline-btn {
   background: rgba(15, 23, 42, 0.78);
   border-color: rgba(148, 163, 184, 0.24);
   color: #e5e7eb;

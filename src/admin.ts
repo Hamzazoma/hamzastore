@@ -7,6 +7,7 @@ import {
   getProducts,
   updateOrderStatus,
 } from './api.ts'
+import { localizeCategory, localizeProduct, type Lang } from './catalogText.ts'
 import type { Order, OrderStatus, Product } from './types.ts'
 
 const app = document.querySelector<HTMLDivElement>('#app')
@@ -23,7 +24,6 @@ const FORM_IDLE_RESUME_MS = 1800
 const FALLBACK_PRODUCT_IMAGE =
   'linear-gradient(135deg, #111827 0%, #334155 45%, #cbd5e1 100%)'
 
-type Lang = 'ar' | 'en'
 type Theme = 'light' | 'dark'
 
 const LANG_KEY = 'storefront-lang'
@@ -217,15 +217,15 @@ let imageFileButton: HTMLButtonElement | null = null
 let imageFileName: HTMLSpanElement | null = null
 
 function formatPrice(value: number) {
-  return new Intl.NumberFormat(state.ui.lang === 'ar' ? 'ar-EG' : 'en-US', {
+  return new Intl.NumberFormat(state.ui.lang === 'ar' ? 'ar-SA' : 'en-SA', {
     style: 'currency',
-    currency: 'EGP',
+    currency: 'SAR',
     maximumFractionDigits: 0,
   }).format(value)
 }
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat(state.ui.lang === 'ar' ? 'ar-EG' : 'en-US', {
+  return new Intl.DateTimeFormat(state.ui.lang === 'ar' ? 'ar-SA' : 'en-SA', {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value))
@@ -272,6 +272,7 @@ function resetFormPause() {
 function renderShell() {
   applyLanguage(state.ui.lang)
   applyTheme(state.ui.theme)
+  const localizedCategories = categories.map((category) => localizeCategory(category, state.ui.lang))
 
   appRoot.innerHTML = `
     <div class="admin-shell">
@@ -327,7 +328,7 @@ function renderShell() {
               <label>
                 <span>${t('category')}</span>
                 <select name="category" required>
-                  ${categories
+                  ${localizedCategories
                     .map((category) => `<option value="${category.id}">${category.name}</option>`)
                     .join('')}
                 </select>
@@ -668,8 +669,8 @@ function renderProducts() {
           <div class="mini-product__image" style="${getProductImageStyle(product.image)}"></div>
           <div class="mini-product__content">
             <div>
-              <strong>${product.name}</strong>
-              <p>${categories.find((category) => category.id === product.category)?.name ?? ''} · ${formatPrice(product.price)}</p>
+              <strong>${localizeProduct(product, state.ui.lang).name}</strong>
+              <p>${localizeCategory(categories.find((category) => category.id === product.category) ?? categories[0], state.ui.lang).name} · ${formatPrice(product.price)}</p>
             </div>
             <button class="danger-button" type="button" data-product-id="${product.id}">
               ${t('delete')}

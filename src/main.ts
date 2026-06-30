@@ -1,5 +1,7 @@
 import './style.css'
 import { createOrder, getCategories, getProducts } from './api.ts'
+import { localizeCategory, localizeProduct, type Lang } from './catalogText.ts'
+import { readCart, writeCart } from './cartStorage.ts'
 import type { CartItem, CategoryId, Product } from './types.ts'
 
 const app = document.querySelector<HTMLDivElement>('#app')
@@ -8,12 +10,10 @@ if (!app) {
   throw new Error('App root was not found')
 }
 
-const appRoot = app
-const categories = getCategories()
-
-type Lang = 'ar' | 'en'
 type Theme = 'light' | 'dark'
 
+const appRoot = app
+const categories = getCategories()
 const LANG_KEY = 'storefront-lang'
 const THEME_KEY = 'storefront-theme'
 
@@ -40,10 +40,9 @@ const messages: Record<Lang, Record<string, string>> = {
   ar: {
     brandTag: 'متجر أزياء',
     headline: 'واجهة متجر بسيطة وسريعة',
-    subhead: 'تسوق بسهولة، واختَر المقاس، وأرسل الطلب مباشرة. لوحة الإدارة متاحة لإضافة المنتجات ومتابعة الطلبات.',
+    subhead: 'تسوق بسهولة، واختَر المقاس، وأرسل الطلب مباشرة. يمكنك فتح صفحة كل منتج على حدة.',
     navProducts: 'المنتجات',
     navWorldCup: 'منتخبات',
-    navAdmin: 'لوحة الإدارة',
     toggleLang: 'English',
     toggleThemeLight: 'لايت',
     toggleThemeDark: 'دارك',
@@ -63,8 +62,8 @@ const messages: Record<Lang, Record<string, string>> = {
     filtersAll: 'الكل',
     sizeLabel: 'اختيار المقاس',
     sizeAll: 'كل المقاسات',
-    categoryFallback: '',
     addToCart: 'أضف للسلة',
+    viewDetails: 'عرض التفاصيل',
     cartEyebrow: 'سلة العميل',
     cartTitle: 'الطلب الحالي',
     cartEmpty: 'السلة فارغة حاليًا. اختر منتجًا ومقاسًا لإضافته.',
@@ -73,9 +72,9 @@ const messages: Record<Lang, Record<string, string>> = {
     customerName: 'اسم العميل',
     customerNamePlaceholder: 'اكتب الاسم',
     phone: 'رقم الهاتف',
-    phonePlaceholder: '01xxxxxxxxx',
+    phonePlaceholder: '05xxxxxxxx',
     address: 'العنوان',
-    addressPlaceholder: 'المدينة - المنطقة - الشارع',
+    addressPlaceholder: 'المدينة - الحي - الشارع',
     notes: 'ملاحظات',
     notesPlaceholder: 'أي تفاصيل إضافية',
     checkout: 'تأكيد الطلب',
@@ -84,22 +83,20 @@ const messages: Record<Lang, Record<string, string>> = {
     noticeNeedCustomer: 'من فضلك أكمل بيانات العميل الأساسية.',
     noticeSuccess: 'تم إرسال الطلب بنجاح، وستراه فورًا داخل لوحة الإدارة.',
     noticeFail: 'حدثت مشكلة أثناء إرسال الطلب. جرّب مرة أخرى.',
+    defaultBadge: 'منتج',
   },
   en: {
     brandTag: 'Fashion Store',
     headline: 'Simple & fast storefront',
-    subhead:
-      'Shop easily, pick a size, and send your order instantly. Admin panel is available to manage products and orders.',
+    subhead: 'Shop easily, pick a size, and open each product on its own details page.',
     navProducts: 'Products',
     navWorldCup: 'Teams',
-    navAdmin: 'Admin',
     toggleLang: 'العربية',
     toggleThemeLight: 'Light',
     toggleThemeDark: 'Dark',
     heroBadge: 'Storefront',
     heroTitle: 'World Cup teams collection',
-    heroText:
-      'Tap any category to jump to matching products and filter sizes easily.',
+    heroText: 'Tap any category to jump to matching products and filter sizes easily.',
     heroShop: 'Shop teams',
     heroAll: 'View all products',
     promoMen: 'Men',
@@ -113,8 +110,8 @@ const messages: Record<Lang, Record<string, string>> = {
     filtersAll: 'All',
     sizeLabel: 'Size',
     sizeAll: 'All sizes',
-    categoryFallback: '',
     addToCart: 'Add to cart',
+    viewDetails: 'View details',
     cartEyebrow: 'Cart',
     cartTitle: 'Current order',
     cartEmpty: 'Your cart is empty. Pick a product and a size.',
@@ -123,9 +120,9 @@ const messages: Record<Lang, Record<string, string>> = {
     customerName: 'Customer name',
     customerNamePlaceholder: 'Type your name',
     phone: 'Phone number',
-    phonePlaceholder: '01xxxxxxxxx',
+    phonePlaceholder: '05xxxxxxxx',
     address: 'Address',
-    addressPlaceholder: 'City - area - street',
+    addressPlaceholder: 'City - district - street',
     notes: 'Notes',
     notesPlaceholder: 'Any extra details',
     checkout: 'Place order',
@@ -134,11 +131,8 @@ const messages: Record<Lang, Record<string, string>> = {
     noticeNeedCustomer: 'Please fill in the required customer details.',
     noticeSuccess: 'Order sent successfully. You will see it in the Admin panel.',
     noticeFail: 'Something went wrong while sending the order. Please try again.',
+    defaultBadge: 'Product',
   },
-}
-
-function t(key: keyof (typeof messages)['ar']) {
-  return messages[state.ui.lang][key] ?? messages.ar[key] ?? String(key)
 }
 
 const state: {
@@ -160,7 +154,7 @@ const state: {
   notice: string
 } = {
   products: [],
-  cart: [],
+  cart: readCart(),
   selectedCategory: 'all',
   selectedSize: 'all',
   ui: {
@@ -177,12 +171,24 @@ const state: {
   notice: '',
 }
 
+function t(key: keyof (typeof messages)['ar']) {
+  return messages[state.ui.lang][key] ?? messages.ar[key] ?? String(key)
+}
+
 function formatPrice(value: number) {
-  return new Intl.NumberFormat(state.ui.lang === 'ar' ? 'ar-EG' : 'en-US', {
+  return new Intl.NumberFormat(state.ui.lang === 'ar' ? 'ar-SA' : 'en-SA', {
     style: 'currency',
-    currency: 'EGP',
+    currency: 'SAR',
     maximumFractionDigits: 0,
   }).format(value)
+}
+
+function getLocalizedCategories() {
+  return categories.map((category) => localizeCategory(category, state.ui.lang))
+}
+
+function getLocalizedProduct(product: Product) {
+  return localizeProduct(product, state.ui.lang)
 }
 
 function getFilteredProducts() {
@@ -200,15 +206,21 @@ function findProduct(productId: string) {
   return state.products.find((product) => product.id === productId)
 }
 
+function persistCart() {
+  writeCart(state.cart)
+}
+
 function buildCartDetails() {
   return state.cart
     .map((item) => {
       const product = findProduct(item.productId)
       if (!product) return null
 
+      const displayProduct = getLocalizedProduct(product)
+
       return {
         productId: product.id,
-        name: product.name,
+        name: displayProduct.name,
         price: product.price,
         size: item.size,
         quantity: item.quantity,
@@ -225,7 +237,12 @@ function scrollToProducts() {
   document.querySelector('#products')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
+function goToProduct(productId: string) {
+  window.location.href = `product.html?id=${encodeURIComponent(productId)}`
+}
+
 function render() {
+  const localizedCategories = getLocalizedCategories()
   const filteredProducts = getFilteredProducts()
   const allSizes = ['all', ...new Set(state.products.flatMap((product) => product.sizes))]
   const cartItems = buildCartDetails()
@@ -247,7 +264,6 @@ function render() {
             <nav class="top-links">
               <a href="#products">${t('navProducts')}</a>
               <a href="#world-cup">${t('navWorldCup')}</a>
-              <a href="admin.html">${t('navAdmin')}</a>
             </nav>
             <div class="topbar__actions">
               <button id="toggle-lang" class="tool-btn" type="button">${t('toggleLang')}</button>
@@ -261,7 +277,7 @@ function render() {
 
       <section class="hero-board">
         <aside class="hero-menu">
-          ${categories
+          ${localizedCategories
             .map(
               (category) => `
                 <button class="hero-menu__item" data-category="${category.id}" style="--accent:${category.accent}">
@@ -300,7 +316,7 @@ function render() {
       </section>
 
       <section class="category-strip">
-        ${categories
+        ${localizedCategories
           .map(
             (category) => `
               <button class="category-card" data-category="${category.id}" style="--accent:${category.accent}">
@@ -325,7 +341,7 @@ function render() {
           <section class="filters" id="products">
             <div class="filters__chips">
               <button class="${state.selectedCategory === 'all' ? 'active' : ''}" data-category="all">${t('filtersAll')}</button>
-              ${categories
+              ${localizedCategories
                 .map(
                   (category) => `
                     <button class="${state.selectedCategory === category.id ? 'active' : ''}" data-category="${category.id}">
@@ -354,19 +370,24 @@ function render() {
 
           <section class="product-grid">
             ${filteredProducts
-              .map(
-                (product) => `
-                  <article class="product-card">
+              .map((product) => {
+                const displayProduct = getLocalizedProduct(product)
+                const displayCategory =
+                  localizedCategories.find((category) => category.id === product.category)?.name ?? ''
+
+                return `
+                  <article class="product-card" data-open-product="${product.id}">
+                    <button class="product-card__click" type="button" data-open-product="${product.id}" aria-label="${displayProduct.name}"></button>
                     <div class="product-card__image" style="background:${product.image}">
-                      <span>${product.badge ?? 'منتج'}</span>
+                      <span>${displayProduct.badge ?? t('defaultBadge')}</span>
                     </div>
                     <div class="product-card__body">
                       <div class="product-card__meta">
-                        <small>${categories.find((category) => category.id === product.category)?.name ?? ''}</small>
+                        <small>${displayCategory}</small>
                         <strong>${formatPrice(product.price)}</strong>
                       </div>
-                      <h4>${product.name}</h4>
-                      <p>${product.description}</p>
+                      <h4>${displayProduct.name}</h4>
+                      <p>${displayProduct.description}</p>
                       <div class="sizes-row">
                         ${product.sizes.map((size) => `<span>${size}</span>`).join('')}
                       </div>
@@ -376,12 +397,13 @@ function render() {
                             .map((size) => `<option value="${size}">${size}</option>`)
                             .join('')}
                         </select>
+                        <button class="ghost-inline-btn" type="button" data-open-product="${product.id}">${t('viewDetails')}</button>
                         <button class="primary-btn small" data-add-product="${product.id}">${t('addToCart')}</button>
                       </div>
                     </div>
                   </article>
-                `,
-              )
+                `
+              })
               .join('')}
           </section>
         </section>
@@ -480,8 +502,19 @@ function render() {
     render()
   })
 
+  document.querySelectorAll<HTMLElement>('[data-open-product]').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      const target = event.currentTarget as HTMLElement
+      const productId = target.dataset.openProduct
+      if (!productId) return
+      goToProduct(productId)
+    })
+  })
+
   document.querySelectorAll<HTMLElement>('[data-add-product]').forEach((button) => {
-    button.addEventListener('click', () => {
+    button.addEventListener('click', (event) => {
+      event.stopPropagation()
+
       const productId = button.dataset.addProduct
       if (!productId) return
 
@@ -500,6 +533,7 @@ function render() {
         state.cart.unshift({ productId, size, quantity: 1 })
       }
 
+      persistCart()
       state.notice = ''
       render()
     })
@@ -521,11 +555,13 @@ function render() {
         })
         .filter((item) => item.quantity > 0)
 
+      persistCart()
       render()
     })
   })
 
-  document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('.checkout-form input, .checkout-form textarea')
+  document
+    .querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('.checkout-form input, .checkout-form textarea')
     .forEach((field) => {
       field.addEventListener('input', () => {
         state.checkout = {
@@ -565,6 +601,7 @@ function render() {
       })
 
       state.cart = []
+      persistCart()
       state.checkout = {
         customerName: '',
         phone: '',
@@ -588,4 +625,4 @@ async function bootstrap() {
   render()
 }
 
-bootstrap()
+void bootstrap()
